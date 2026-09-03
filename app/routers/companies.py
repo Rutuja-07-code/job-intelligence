@@ -26,13 +26,13 @@ def create_company_endpoint(
 
 #get company
 from ..services.company_service import get_companies
-@router.get("/{company_id}", response_model=list[CompanyResponse])
+@router.get("/", response_model=list[CompanyResponse])
 def get_companies_endpoint(db:Session=Depends(get_db)):
     return get_companies(db)
 
 # getting specific row of specific id
 from ..services.company_service import get_company
-@router.get("/", response_model=CompanyResponse)
+@router.get("/{company_id}", response_model=CompanyResponse)
 def get_company_endpoint(
     company_id: int,
     db: Session = Depends(get_db)

@@ -50,7 +50,11 @@ def get_company_jobs(
             detail="Company not found"
         )
 
-    return company.jobs
+    return (
+        db.query(Job)
+        .filter(Job.company_id == company_id)
+        .all()
+    )
 
 #retrive comapany any info while also want info fro job
 def get_jobs(db: Session):
