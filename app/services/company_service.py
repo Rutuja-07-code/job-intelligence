@@ -3,6 +3,16 @@ from sqlalchemy.orm import Session
 
 from ..models import Company
 from ..schemas import CompanyCreate, CompanyUpdate
+from ..repositories.company_repository import (
+    get_all_companies, 
+    get_company_by_id,
+    create_company as create_company_db,
+    update_company as update_company_db
+)
+
+# get companies
+def get_companies(db:Session):
+    return get_all_companies(db)
 
 #creat company
 def create_company(db: Session, company_data: CompanyCreate):
@@ -11,26 +21,12 @@ def create_company(db: Session, company_data: CompanyCreate):
         website=company_data.website
     )
 
-    db.add(new_company)
-    db.commit()
-    db.refresh(new_company)
-
-    return new_company
-
-# get companies
-def get_companies(db:Session):
-    companies=db.query(Company).all()
-    return companies
+    return create_company_db(db, new_company)
 
 #get company
 def get_company(
     company_id: int,db: Session):
-    company = (
-        db.query(Company)
-        .filter(Company.id == company_id)
-        .first()
-    )
-
+    company = get_company_by_id(db, company_id)
     if company is None:
         raise HTTPException(
             status_code=404,
@@ -44,24 +40,13 @@ def update_company(
     company_data:CompanyUpdate,
     db: Session
 ):
-    company = (
-        db.query(Company)
-        .filter(Company.id == company_id)
-        .first()
-    )
+    company = get_company_by_id(db, company_id)
 
     if company is None:
         raise HTTPException(
             status_code=404,
             detail="Company not found"
         )
-    try:
-        company.name = company_data.name
-        company.website = company_data.website
-
-        db.commit()
-        db.refresh(company)
-    except Exception:
-        db.rollback()
-        raise
-    return company
+    company.name = company_data.name
+    company.website = company_data.website
+    return update_company_db(db, company)
