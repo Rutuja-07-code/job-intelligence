@@ -50,3 +50,34 @@ def update_company(
     company.name = company_data.name
     company.website = company_data.website
     return update_company_db(db, company)
+
+def get_or_create_company(
+    db: Session,
+    company_name: str,
+    website: str | None = None
+):
+    company_name = company_name.strip()
+
+    if not company_name:
+        return None
+
+    company = (
+        db.query(Company)
+        .filter(Company.name.ilike(company_name))
+        .first()
+    )
+
+    if company:
+        if not company.website and website:
+            company.website = website
+            db.commit()
+            db.refresh(company)
+
+        return company
+
+    new_company = Company(
+        name=company_name,
+        website=website
+    )
+
+    return create_company_db(db, new_company)

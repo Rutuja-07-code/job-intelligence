@@ -1,3 +1,7 @@
+from ..models import JobRequirement
+from .company_service import get_or_create_company
+from .skill_extraction_service import extract_skills
+
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
@@ -63,3 +67,78 @@ def get_company_jobs(
 #retrive comapany any info while also want info fro job
 def get_jobs(db: Session, user_id: int):
     return get_jobs_with_company(db, user_id)
+
+def import_jobs(jobs: list, db: Session, user_id: int):
+
+    imported = 0
+    skipped = 0
+
+    for job_data in jobs:
+
+        # 1. Extract basic job information
+        title = job_data.get("title")
+        description = job_data.get("description") or ""
+
+        company_data = job_data.get("company") or {}
+        location_data = job_data.get("location") or {}
+
+        company_name = company_data.get("display_name")
+        company_website = company_data.get("website")
+
+        location = location_data.get("display_name")
+        # 2. Skip jobs with missing information
+        if not title or not company_name:
+            skipped += 1
+            continue
+
+        # 3. Find or create company
+        company = get_or_create_company(
+            db,
+            company_name,
+            company_website
+        )
+        # 4. Check whether this job already exists
+        existing_job = db.query(Job).filter(
+            Job.company_id == company.id,
+            Job.title == title
+        ).first()
+
+        if existing_job:
+            skipped += 1
+            continue
+
+        # 5. Create job
+        new_job = Job(
+            user_id=user_id,
+            company_id=company.id,
+            title=title,
+            description=description,
+            location=location
+        )
+
+        try:
+            db.add(new_job)
+            db.flush()
+
+            # 6. Extract skills
+            skills = extract_skills(description)
+
+            # 7. Save skills as job requirements
+            for skill in skills:
+                requirement = JobRequirement(
+                    job_id=new_job.id,
+                    skill_name=skill
+                )
+                db.add(requirement)
+
+            db.commit()
+            imported += 1
+
+        except Exception:
+            db.rollback()
+            raise
+
+    return {
+        "imported": imported,
+        "skipped": skipped
+    }

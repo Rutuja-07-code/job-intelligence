@@ -1,10 +1,11 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
+import RecommendedJobs from "./pages/RecommendedJobs"
 
 import Login from "./pages/Login"
 import Dashboard from "./pages/Dashboard"
 import Jobs from "./pages/Jobs"
 import ProtectedRoute from "./components/ProtectedRoute"
-
 
 function App() {
   return (
@@ -27,6 +28,14 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/recommended-jobs"
+          element={
+            <ProtectedRoute>
+              <RecommendedJobs />
+            </ProtectedRoute>
+          }
+        />
 
       </Routes>
     </BrowserRouter>
@@ -34,3 +43,4 @@ function App() {
 }
 
 export default App
+

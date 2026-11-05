@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 
 
@@ -44,3 +44,33 @@ class UserLogin(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str
+
+class ProfileCreate(BaseModel):
+    full_name: str
+class ProfileResponse(BaseModel):
+    id: int
+    user_id: int
+    full_name: str
+    created_at: datetime
+
+class SkillCreate(BaseModel):
+    name: str
+class JobRequirementCreate(BaseModel):
+    skill_name: str
+
+
+class JobRequirementResponse(BaseModel):
+    id: int
+    job_id: int
+    skill_name: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+class JobRecommendationResponse(BaseModel):
+    job_id: int
+    job_title: str
+    company_name: str
+    location: str | None
+    match_score: float
+    matched_skills: list[str]
+    missing_skills: list[str]

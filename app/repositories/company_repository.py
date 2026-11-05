@@ -36,3 +36,8 @@ def update_company(
         db.rollback()
         raise
     return company
+
+def get_company_by_name(db: Session, company_name: str):
+    return db.query(Company).filter(
+        Company.name == company_name
+    ).first()
