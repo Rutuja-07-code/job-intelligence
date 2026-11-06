@@ -25,7 +25,7 @@ def extract_skills(description: str) -> list[str]:
 
     for skill, keywords in SKILL_DICTIONARY.items():
         for keyword in keywords:
-            pattern = rf"(?<!\\w){re.escape(keyword.casefold())}(?!\\w)"
+            pattern = rf"(?<!\w){re.escape(keyword.casefold())}(?!\w)"
             if re.search(pattern, description):
                 extracted_skills.append(skill)
                 break
