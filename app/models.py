@@ -30,9 +30,10 @@ class Job(Base):
 
     __table_args__ = (
         UniqueConstraint(
+            "user_id",
             "company_id",
             "title",
-            name="unique_company_job_title"
+            name="unique_user_company_job_title"
         ),
         Index(
         "idx_jobs_company_id",
@@ -46,7 +47,7 @@ class Job(Base):
         Integer,
         ForeignKey("companies.id"),
         nullable=False,
-)   
+    )
     user_id = Column(
         Integer,
         ForeignKey("users.id"),
@@ -59,10 +60,10 @@ class Job(Base):
 
     company = relationship("Company", back_populates="jobs")
     requirements = relationship(
-    "JobRequirement",
-    back_populates="job",
-    cascade="all, delete-orphan"
-)
+        "JobRequirement",
+        back_populates="job",
+        cascade="all, delete-orphan"
+    )
 
 class User(Base):
     __tablename__ = "users"
@@ -122,11 +123,11 @@ class Profile(Base):
     user = relationship("User", back_populates="profile")
 
     skills = relationship(
-    "Skill",
-    back_populates="profile",
-    cascade="all, delete-orphan"
-)
-    
+        "Skill",
+        back_populates="profile",
+        cascade="all, delete-orphan"
+    )
+
 
 class JobRequirement(Base):
     __tablename__ = "job_requirements"
