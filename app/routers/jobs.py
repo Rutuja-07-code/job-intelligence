@@ -2,25 +2,33 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import Job, Company, JobRequirement
+from ..dependencies import get_current_user
+from ..models import Job, JobRequirement
 from ..schemas import (
     JobResponse,
     JobCreate,
     JobWithCompanyResponse,
-    JobRequirementCreate, 
+    JobRequirementCreate,
     JobRequirementResponse,
-    JobRecommendationResponse
+    JobRecommendationResponse,
+    JobImportRequest,
+    JobImportResponse
+)
+from ..services.job_service import (
+    create_job,
+    get_company_jobs,
+    get_jobs,
+    import_adzuna_jobs
 )
 from ..services.recommendation_service import get_job_recommendations
-from ..dependencies import get_current_user
+
 
 router = APIRouter(
     prefix="",
     tags=["Jobs"]
 )
 
-# create job
-from ..services.job_service import create_job
+
 @router.post(
     "/companies/{company_id}/jobs",
     response_model=JobResponse
@@ -31,10 +39,9 @@ def create_job_endpoint(
     db: Session = Depends(get_db),
     current_user: int = Depends(get_current_user)
 ):
-    return create_job(company_id,job_data,db, current_user)
+    return create_job(company_id, job_data, db, current_user)
 
-# get jobs
-from ..services.job_service import get_company_jobs
+
 @router.get(
     "/companies/{company_id}/jobs",
     response_model=list[JobResponse]
@@ -46,12 +53,33 @@ def get_company_jobs_endpoint(
 ):
     return get_company_jobs(company_id, db, current_user)
 
-#retrive comapany any info while also want info fro job
-from ..services.job_service import get_jobs
-@router.get("/jobs", response_model=list[JobWithCompanyResponse])
+
+@router.post(
+    "/jobs/import",
+    response_model=JobImportResponse
+)
+def import_adzuna_jobs_endpoint(
+    import_data: JobImportRequest,
+    db: Session = Depends(get_db),
+    current_user: int = Depends(get_current_user)
+):
+    return import_adzuna_jobs(
+        keyword=import_data.keyword,
+        location=import_data.location,
+        results_per_page=import_data.results_per_page,
+        db=db,
+        user_id=current_user
+    )
+
+
+@router.get(
+    "/jobs",
+    response_model=list[JobWithCompanyResponse]
+)
 def get_jobs_endpoint(
     db: Session = Depends(get_db),
-    current_user: int = Depends(get_current_user)):
+    current_user: int = Depends(get_current_user)
+):
     return get_jobs(db, current_user)
 
 
@@ -66,7 +94,6 @@ def add_job_requirement(
     db: Session = Depends(get_db),
     user_id: int = Depends(get_current_user)
 ):
-    # Find the job owned by the logged-in user
     job = db.query(Job).filter(
         Job.id == job_id,
         Job.user_id == user_id
@@ -78,7 +105,6 @@ def add_job_requirement(
             detail="Job not found"
         )
 
-    # Check whether this skill is already required
     existing_requirement = db.query(JobRequirement).filter(
         JobRequirement.job_id == job_id,
         JobRequirement.skill_name == requirement_data.skill_name
@@ -90,7 +116,6 @@ def add_job_requirement(
             detail="This skill is already required for this job"
         )
 
-    # Create the requirement
     new_requirement = JobRequirement(
         job_id=job_id,
         skill_name=requirement_data.skill_name
@@ -101,6 +126,7 @@ def add_job_requirement(
     db.refresh(new_requirement)
 
     return new_requirement
+
 
 @router.get(
     "/jobs/recommendations",
